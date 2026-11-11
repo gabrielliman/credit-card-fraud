@@ -1,0 +1,1 @@
+{"model": "lgbm", "params": {"n_estimators": 10000, "learning_rate": 0.02}, "early_stopping": 300, "note": "Same as exp02 but lr 0.1->0.02 and up to 10k trees with early stopping (patience 300) on AUC; all other params default"}

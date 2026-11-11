@@ -27,19 +27,26 @@ def main(exp_dir):
     train, test, sample, id_col, target = load()
     X, y, X_test, cats = prepare(train, test, id_col, target)
 
-    oof, pred, folds = np.zeros(len(X)), np.zeros(len(X_test)), []
+    oof, pred, folds, best_iters = np.zeros(len(X)), np.zeros(len(X_test)), [], []
     t0 = time.time()
     skf = StratifiedKFold(N_FOLDS, shuffle=True, random_state=SEED)
     for k, (tr, va) in enumerate(skf.split(X, y)):
         model = build(cfg["model"], cfg.get("params", {}), cats, X.columns)
-        model.fit(X.iloc[tr], y.iloc[tr])
+        fit_kw = {}
+        if cfg.get("early_stopping"):  # D007: early stopping monitored on the fold's validation split
+            import lightgbm as lgb
+            fit_kw = dict(eval_set=[(X.iloc[va], y.iloc[va])], eval_metric="auc",
+                          callbacks=[lgb.early_stopping(cfg["early_stopping"], verbose=False)])
+        model.fit(X.iloc[tr], y.iloc[tr], **fit_kw)
+        if fit_kw:
+            best_iters.append(model.best_iteration_)
         oof[va] = model.predict_proba(X.iloc[va])[:, 1]
         pred += model.predict_proba(X_test)[:, 1] / N_FOLDS
         folds.append(roc_auc_score(y.iloc[va], oof[va]))
         print(f"fold {k}: AUC {folds[-1]:.5f}", flush=True)
 
     metrics = dict(cv_auc=roc_auc_score(y, oof), fold_auc=folds,
-                   fold_std=float(np.std(folds)), runtime_s=round(time.time() - t0, 1))
+                   fold_std=float(np.std(folds)), runtime_s=round(time.time() - t0, 1), best_iters=best_iters)
     print(json.dumps(metrics, indent=1))
     (exp / "metrics.json").write_text(json.dumps(metrics, indent=1))
     np.save(exp / "oof.npy", oof)

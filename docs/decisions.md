@@ -35,3 +35,11 @@ Each entry: context → options → decision → rationale/evidence (with refere
 ## D006 — Experiment tracking (2026-11-11)
 - **Decision:** each experiment lives in `experiments/expNN_name/` with `config.json`, `metrics.json` (per-fold AUC), `oof.npy`, `test_pred.npy`, `submission.csv` and `command.txt`; it runs via `make run EXP=...`. The `.npy` and CSV files are gitignored and can be regenerated.
 - **Rationale:** reproducibility; out-of-fold predictions enable stacking (Wolpert, 1992, *Stacked Generalization*) and per-fold paired comparisons.
+
+## D003 check — CV vs public LB (2026-11-11)
+- exp01: CV 0.94187 → LB 0.94245; exp02: CV 0.94391 → LB 0.94557. Same ranking, LB about 0.001 higher. CV tracks the LB, as the adversarial validation suggested. The public LB covers only part of the test set, so small differences there are noise.
+
+## D007 — Model sizing for LightGBM (2026-11-11)
+- **Decision:** learning rate 0.02 with early stopping (patience 300 rounds, monitoring AUC) instead of a fixed 100 trees.
+- **Rationale:** shrinkage plus more boosting iterations generalizes better (Friedman, 2001, *Greedy Function Approximation: A Gradient Boosting Machine*, Ann. Statist.).
+- **Caveat:** early stopping watches the same validation fold that we score, so CV is slightly optimistic (the stopping point is picked using that fold). With 140k validation rows and stopping points that range widely (777–1195), the bias should be tiny. Alternative if needed: a separate inner validation split, or retraining with a fixed number of trees.
