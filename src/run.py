@@ -35,7 +35,7 @@ def main(exp_dir):
         fit_kw = {}
         if cfg.get("early_stopping"):  # D007: early stopping monitored on the fold's validation split
             import lightgbm as lgb
-            fit_kw = dict(eval_set=[(X.iloc[va], y.iloc[va])], eval_metric="auc",
+            fit_kw = dict(eval_X=X.iloc[va], eval_y=y.iloc[va], eval_metric="auc",
                           callbacks=[lgb.early_stopping(cfg["early_stopping"], verbose=False)])
         model.fit(X.iloc[tr], y.iloc[tr], **fit_kw)
         if fit_kw:

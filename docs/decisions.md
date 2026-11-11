@@ -43,3 +43,13 @@ Each entry: context → options → decision → rationale/evidence (with refere
 - **Decision:** learning rate 0.02 with early stopping (patience 300 rounds, monitoring AUC) instead of a fixed 100 trees.
 - **Rationale:** shrinkage plus more boosting iterations generalizes better (Friedman, 2001, *Greedy Function Approximation: A Gradient Boosting Machine*, Ann. Statist.).
 - **Caveat:** early stopping watches the same validation fold that we score, so CV is slightly optimistic (the stopping point is picked using that fold). With 140k validation rows and stopping points that range widely (777–1195), the bias should be tiny. Alternative if needed: a separate inner validation split, or retraining with a fixed number of trees.
+
+## D008 — Deciding whether a change helped (2026-11-11)
+- **Options:** (A) paired fold deltas + corrected resampled t-test; (B) "better on overall CV and on ≥ 4/5 folds"; (C) overall CV only.
+- **Decision:** A, implemented as `make compare A=... B=...`.
+- **Rationale:** experiments share the same folds, so per-fold differences cancel fold difficulty. A plain t-test on CV folds gives too many false positives because training sets overlap (Dietterich, 1998, *Approximate Statistical Tests for Comparing Supervised Classification Learning Algorithms*, Neural Computation). Nadeau & Bengio (2003, *Inference for the Generalization Error*, Machine Learning) correct the variance by a factor of (1/k + n_test/n_train).
+- **Results so far:** exp01→02 +0.00208, 5/5 folds, p = 0.011; exp02→03 +0.00203, 5/5 folds, p = 0.005.
+
+## D007 follow-up — Early-stopping patience (2026-11-11)
+- **Diagnostic:** trained 4000 trees with no early stopping on folds 0 and 1 and recorded validation AUC at every iteration.
+- **Result:** the best iteration overall (1195 and 926) is exactly where patience = 300 stopped. After that AUC steadily falls (fold 0: 0.94409 → 0.94180 at 4000 trees), which is overfitting. **Patience 300 is enough, so there's no reason to increase it.**
