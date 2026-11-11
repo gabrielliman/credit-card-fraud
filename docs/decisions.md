@@ -20,3 +20,18 @@ Each entry: context → options → decision → rationale/evidence (with refere
 - **Decision:** A — `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`, same folds for every experiment.
 - **Rationale:** stratification keeps the positive rate per fold constant, reducing variance of the estimate (Kohavi, 1995, *A Study of Cross-Validation and Bootstrap for Accuracy Estimation and Model Selection*, IJCAI). 5 folds ≈ 11.7k positives per validation fold, enough for a stable AUC at half the cost of 10-fold. Fixed folds make experiments comparable and enable stacking later.
 - **To verify:** CV ↔ public LB correlation over the first submissions.
+
+## D004 — Baselines (2026-11-11)
+- **Options:** (A) logistic regression + default LightGBM; (B) LightGBM only.
+- **Decision:** A.
+- **Rationale:** a linear floor quantifies what non-linearity buys. Trees are the expected state of the art on tabular data (Grinsztajn et al., 2022, *Why do tree-based models still outperform deep learning on tabular data?*, NeurIPS; Ke et al., 2017, *LightGBM*, NeurIPS).
+- **Result:** exp01 0.94187 vs exp02 0.94391.
+
+## D005 — Categorical handling for LightGBM (2026-11-11)
+- **Options:** (A) native categorical splits; (B) one-hot; (C) target encoding (Micci-Barreca, 2001).
+- **Decision:** A for now; C kept as a later experiment.
+- **Rationale:** few levels per category (≤12), so native splits are simple and have no leakage risk.
+
+## D006 — Experiment tracking (2026-11-11)
+- **Decision:** each experiment lives in `experiments/expNN_name/` with `config.json`, `metrics.json` (per-fold AUC), `oof.npy`, `test_pred.npy`, `submission.csv` and `command.txt`; it runs via `make run EXP=...`. The `.npy` and CSV files are gitignored and can be regenerated.
+- **Rationale:** reproducibility; out-of-fold predictions enable stacking (Wolpert, 1992, *Stacked Generalization*) and per-fold paired comparisons.

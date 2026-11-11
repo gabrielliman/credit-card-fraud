@@ -1,0 +1,1 @@
+{"model": "lgbm", "params": {}, "note": "LightGBM library defaults (100 trees, lr 0.1, 31 leaves), native categoricals"}
