@@ -1,0 +1,9 @@
+data/*
+!data/.gitkeep
+submissions/*.csv
+models/*
+!models/.gitkeep
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+kaggle.json
