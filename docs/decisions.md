@@ -82,4 +82,16 @@ Each entry: context → options → decision → rationale/evidence (with refere
 - **Tested (each alone on exp03b):** velocity decomposition (05a), flag count (05b), frequency encoding (05c1), few-valued numerics as categorical (05c2), dropping 8 no-signal features (05d).
 - **Results:** none significantly better; 05c2 significantly worse (p = 0.026).
 - **Interpretation:** at ~900 trees, LightGBM already learns these transformations (sums, ratios, frequencies) on its own; Heaton (2016) found ratio/count features help neural nets and linear models far more than tree ensembles. Treating ordered values as unordered categories throws away their order and adds split candidates (more variance), so it hurts.
-- **Decision pending (user):** whether to adopt 05d (simpler model, +0.00014, p = 0.12).
+- **Decision:** keep all features; exp03b remains the reference. 05d (drop 8 features) is **not** adopted for now: not significant (p = 0.12), and other model families (CatBoost/XGBoost) might use those features through interactions. Re-test on the final models.
+
+## D012 — Roadmap after FE round 1 (2026-11-12)
+- **Options:** (a) hyperparameter tuning; (b) model diversity (XGBoost, CatBoost); (c) ensembling; (d) synthetic-artifact search.
+- **Decision:** a → b → c. **No (d)**: it would exploit the data generator rather than model fraud, so the result is less general.
+
+## D013 — Hyperparameter tuning protocol (2026-11-12)
+- **Search method:** Optuna TPE (Bergstra et al., 2011, *Algorithms for Hyper-Parameter Optimization*, NeurIPS; Akiba et al., 2019, *Optuna*, KDD). Alternatives: random search (Bergstra & Bengio, 2012, JMLR) or grid search.
+- **Trial scoring:** train on folds 1–4, score on fold 0, learning rate 0.05 with early stopping. The best params are rerun on all 5 folds at lr 0.02 with the D009 protocol. **Fold 0 is "seen", so the honest gain is reported on folds 1–4** (Cawley & Talbot, 2010). Rejected: 3-fold CV per trial (3× slower), nested CV (Varma & Simon, 2006; ~5× the cost).
+- **Search space:** num_leaves 15–255 (log), min_child_samples 10–1000 (log), reg_lambda and reg_alpha 1e-3–10 (log), colsample_bytree 0.3–1, subsample 0.5–1, min_split_gain 0–1.
+- **Budget:** 100 trials. The study is saved in `study.db` for history and fANOVA importance plots (Hutter et al., 2014).
+- **Result (exp06):** CV 0.94685. Gain over exp03b on the unseen folds 1–4 is +0.00083, improving on 4/4 folds, p = 0.078 (+0.00093, p = 0.037 including fold 0). The sign is consistent, but with 4 folds the test has little power.
+- **What tuning learned** (fANOVA importance): colsample_bytree 0.54, reg_alpha 0.13, min_child_samples 0.09, others ≤ 0.07. The top-5 trials all use **small trees (15–24 leaves), large leaves (194–543 samples) and ~50% of features per tree**, i.e. *simpler and more regularized than the defaults*. That fits the EDA: the signal is mostly additive (logistic regression already reaches 0.942), so deep interactions mostly fit noise. The search levelled off at trial 28 (0.94579), so 100 trials were enough.

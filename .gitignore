@@ -10,3 +10,5 @@ kaggle.json
 
 experiments/*/*.npy
 experiments/*/submission.csv
+
+experiments/*/study.db
