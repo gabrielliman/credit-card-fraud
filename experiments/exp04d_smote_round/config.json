@@ -1,0 +1,1 @@
+{"model": "lgbm", "early_stopping": 300, "params": {"n_estimators": 10000, "learning_rate": 0.02}, "resample": "smote_round", "note": "exp04c with integer columns rounded after SMOTENC (tests D010 hypothesis)"}

@@ -14,7 +14,8 @@ Config keys:
   early_stopping       patience. Enables the two-pass protocol (D009):
                        pass 1 early-stops on each validation fold to find best iterations;
                        pass 2 retrains every fold with n_estimators = median(best iterations), no peeking.
-  resample             optional: "smote" (applied to the training fold only, D010)
+  resample             optional: "smote" | "smote_round" (training fold only, D010)
+  features             optional list of steps from src/features.py
 """
 import json, sys, time
 from pathlib import Path
@@ -28,6 +29,7 @@ from .config import SEED, N_FOLDS, ROOT
 from .data import load, prepare
 from .models import build
 from .resample import resample
+from .features import apply as apply_features
 
 
 def cv_pass(cfg, params, X, y, X_test, cats, splits, early_stopping=None):
@@ -54,6 +56,9 @@ def main(exp_dir):
     cfg = json.loads((exp / "config.json").read_text())
     train, test, sample, id_col, target = load()
     X, y, X_test, cats = prepare(train, test, id_col, target)
+    X, X_test = apply_features(cfg.get("features"), X, X_test)
+    cats = X.select_dtypes(include="category").columns.tolist()
+    print("features:", X.shape[1], "| categorical:", len(cats))
     splits = list(StratifiedKFold(N_FOLDS, shuffle=True, random_state=SEED).split(X, y))
     params = cfg.get("params", {})
     t0, extra = time.time(), {}

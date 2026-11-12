@@ -1,0 +1,1 @@
+{"model": "lgbm", "early_stopping": 300, "params": {"n_estimators": 10000, "learning_rate": 0.02}, "features": ["velocity"], "note": "exp03b + velocity residual (OLS on txn_count, log hours) + txn_per_hour"}

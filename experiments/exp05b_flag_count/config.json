@@ -1,0 +1,1 @@
+{"model": "lgbm", "early_stopping": 300, "params": {"n_estimators": 10000, "learning_rate": 0.02}, "features": ["flag_count"], "note": "exp03b + number of risk flags raised"}

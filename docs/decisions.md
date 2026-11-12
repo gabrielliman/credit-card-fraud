@@ -71,3 +71,15 @@ Each entry: context → options → decision → rationale/evidence (with refere
 - **Evidence:** 04a significantly worse (−0.0011, p = 0.015); 04b no different (−0.0003, p = 0.13); 04c much worse (−0.055).
 - **Interpretation:** AUC depends only on ranking, and reweighting mostly shifts scores up rather than changing their order (Elkan, 2001, *The Foundations of Cost-Sensitive Learning*). It also makes each positive count more, which raises variance. This matches van den Goorbergh et al. (2022, *The harm of class imbalance corrections for risk prediction models*, JAMIA): no gain in AUC and worse calibration. With 9.3k positives per training fold, the minority class is rare but not *scarce*, which is the situation where resampling usually doesn't help (He & Garcia, 2009, *Learning from Imbalanced Data*, IEEE TKDE).
 - **SMOTE hypothesis (untested):** SMOTENC interpolates discrete numeric features (cvv_retry_count, txn_count_last_24h, customer_age, hour…) and produces non-integer values that never appear in real data. Trees can learn "non-integer value ⇒ fraud", a shortcut that never fires on real validation rows.
+
+## D010 follow-up — why SMOTE failed (2026-11-12)
+- **Hypothesis "non-integer synthetic values" was refuted:** 0% of synthetic rows have non-integer values (SMOTENC keeps integer dtypes); exp04d (rounding) = exp04c exactly.
+- **Real cause:** a classifier separates synthetic from real positives with AUC 0.907. SMOTENC sets each categorical/flag value by the **majority vote of the k=5 nearest neighbours** (Chawla et al., 2002). Rare flags lose that vote almost every time: among real frauds is_foreign = 13.3%, ip_country_mismatch = 16.1%, used_vpn = 13.6%; among synthetic frauds 1.4%, 2.2%, 1.7%. Majority vote also over-represents the dominant level (No Authentication 37% → 48%).
+- **Effect:** ~540k synthetic "frauds" without the strongest fraud signals swamp 9.3k real ones, teaching the model a distorted picture of fraud, hence −0.055 AUC.
+- **Lesson:** oversampling methods have assumptions that break on mixed data with rare binary indicators. Check that synthetic data matches the real distribution (a real-vs-synthetic classifier) before trusting it.
+
+## D011 — Feature engineering round 1 (2026-11-12)
+- **Tested (each alone on exp03b):** velocity decomposition (05a), flag count (05b), frequency encoding (05c1), few-valued numerics as categorical (05c2), dropping 8 no-signal features (05d).
+- **Results:** none significantly better; 05c2 significantly worse (p = 0.026).
+- **Interpretation:** at ~900 trees, LightGBM already learns these transformations (sums, ratios, frequencies) on its own; Heaton (2016) found ratio/count features help neural nets and linear models far more than tree ensembles. Treating ordered values as unordered categories throws away their order and adds split candidates (more variance), so it hurts.
+- **Decision pending (user):** whether to adopt 05d (simpler model, +0.00014, p = 0.12).
