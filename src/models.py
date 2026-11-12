@@ -17,5 +17,6 @@ def build(name, params, cats, columns):
         return make_pipeline(pre, LogisticRegression(**{"max_iter": 1000, **params}))
     if name == "lgbm":
         # D005: native categorical handling (pandas 'category' dtype is auto-detected)
-        return lgb.LGBMClassifier(**{"verbose": -1, "random_state": 42, **params})
+        # metric="auc": track ONLY AUC, otherwise early stopping also stops on binary_logloss (bug found in exp04a)
+        return lgb.LGBMClassifier(**{"verbose": -1, "random_state": 42, "metric": "auc", **params})
     raise ValueError(name)

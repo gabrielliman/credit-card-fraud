@@ -23,7 +23,8 @@ def compare(a, b):
     print(f"A = {a}\nB = {b}")
     print("fold deltas (B-A):", " ".join(f"{x:+.5f}" for x in d))
     print(f"mean delta {d.mean():+.5f} | improved on {(d > 0).sum()}/{k} folds | corrected t = {t:.2f}, p = {p:.4f}")
-    print("verdict:", "significant (p<0.05)" if p < 0.05 else "not significant — treat as noise")
+    print("verdict:", ("significantly BETTER" if d.mean() > 0 else "significantly WORSE") + " (p<0.05)"
+          if p < 0.05 else "not significant — treat as noise")
 
 
 if __name__ == "__main__":

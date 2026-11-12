@@ -53,3 +53,21 @@ Each entry: context → options → decision → rationale/evidence (with refere
 ## D007 follow-up — Early-stopping patience (2026-11-11)
 - **Diagnostic:** trained 4000 trees with no early stopping on folds 0 and 1 and recorded validation AUC at every iteration.
 - **Result:** the best iteration overall (1195 and 926) is exactly where patience = 300 stopped. After that AUC steadily falls (fold 0: 0.94409 → 0.94180 at 4000 trees), which is overfitting. **Patience 300 is enough, so there's no reason to increase it.**
+
+## D009 — Tree-count protocol (2026-11-12)
+- **Options:** (A) early-stop on the scored fold; (B) inner validation split; (C) two passes: early-stop to find the best iterations, then retrain every fold with n = median(best iterations).
+- **Decision:** C for all experiments (each run takes ~2 minutes, so the extra pass is cheap).
+- **Rationale:** no fold's score depends on early stopping run on that same fold (Cawley & Talbot, 2010, *On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation*, JMLR).
+- **Evidence:** exp03 (A) 0.94594 vs exp03b (C) 0.94590, so the bias in A was about 0.00004.
+
+## Bug found — early stopping on the wrong metric (2026-11-12)
+- **Symptom:** exp04a/b stopped after 2 and 14 trees.
+- **Cause:** by default LightGBM also tracks binary_logloss, and early stopping fires when *any* tracked metric stops improving. Class weights inflate the predicted probabilities, so validation log loss got worse from tree 2 (0.076 → 0.281) while AUC kept rising (0.896 → 0.942).
+- **Fix:** `metric="auc"` in the LightGBM factory. exp03/03b weren't affected (their stopping points match the AUC peak in the D007 diagnostic), and all were rerun after the fix.
+
+## D010 — Class imbalance handling (2026-11-12)
+- **Options tested:** none (exp03b), scale_pos_weight = 58.9 (04a), scale_pos_weight = 7.67 (04b), SMOTENC to 1:1 on the training fold (04c; Chawla et al., 2002).
+- **Decision:** **no imbalance correction**.
+- **Evidence:** 04a significantly worse (−0.0011, p = 0.015); 04b no different (−0.0003, p = 0.13); 04c much worse (−0.055).
+- **Interpretation:** AUC depends only on ranking, and reweighting mostly shifts scores up rather than changing their order (Elkan, 2001, *The Foundations of Cost-Sensitive Learning*). It also makes each positive count more, which raises variance. This matches van den Goorbergh et al. (2022, *The harm of class imbalance corrections for risk prediction models*, JAMIA): no gain in AUC and worse calibration. With 9.3k positives per training fold, the minority class is rare but not *scarce*, which is the situation where resampling usually doesn't help (He & Garcia, 2009, *Learning from Imbalanced Data*, IEEE TKDE).
+- **SMOTE hypothesis (untested):** SMOTENC interpolates discrete numeric features (cvv_retry_count, txn_count_last_24h, customer_age, hour…) and produces non-integer values that never appear in real data. Trees can learn "non-integer value ⇒ fraud", a shortcut that never fires on real validation rows.

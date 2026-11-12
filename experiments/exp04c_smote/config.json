@@ -1,0 +1,1 @@
+{"model": "lgbm", "early_stopping": 300, "resample": "smote", "params": {"n_estimators": 10000, "learning_rate": 0.02}, "note": "exp03b + SMOTENC to 1:1 on the training fold only (imblearn default)"}
