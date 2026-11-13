@@ -16,18 +16,18 @@ Config keys:
                        pass 2 retrains every fold with n_estimators = median(best iterations), no peeking.
   resample             optional: "smote" | "smote_round" (training fold only, D010)
   features             optional list of steps from src/features.py
+  seeds                optional list of random seeds to average in pass 2 (D015)
 """
 import json, sys, time
 from pathlib import Path
 
 import numpy as np
-import lightgbm as lgb
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 
 from .config import SEED, N_FOLDS, ROOT
 from .data import load, prepare
-from .models import build
+from .models import build, fit, predict, seed_param
 from .resample import resample
 from .features import apply as apply_features
 
@@ -36,16 +36,15 @@ def cv_pass(cfg, params, X, y, X_test, cats, splits, early_stopping=None):
     oof, pred, folds, best = np.zeros(len(X)), np.zeros(len(X_test)), [], []
     for k, (tr, va) in enumerate(splits):
         Xtr, ytr = resample(cfg.get("resample"), X.iloc[tr], y.iloc[tr], cats)
-        model = build(cfg["model"], params, cats, X.columns)
-        kw = {}
-        if early_stopping:
-            kw = dict(eval_X=X.iloc[va], eval_y=y.iloc[va], eval_metric="auc",
-                      callbacks=[lgb.early_stopping(early_stopping, verbose=False)])
-        model.fit(Xtr, ytr, **kw)
-        if early_stopping:
-            best.append(int(model.best_iteration_))
-        oof[va] = model.predict_proba(X.iloc[va])[:, 1]
-        pred += model.predict_proba(X_test)[:, 1] / len(splits)
+        # D015 seed averaging: pass 2 averages models trained with different seeds (pass 1 uses the first seed)
+        seeds = cfg.get("seeds", [SEED]) if not early_stopping else cfg.get("seeds", [SEED])[:1]
+        for sd in seeds:
+            model = build(cfg["model"], {**params, **seed_param(cfg["model"], sd)}, cats, X.columns)
+            b = fit(model, cfg["model"], Xtr, ytr, cats, X.iloc[va], y.iloc[va], early_stopping)
+            if b is not None:
+                best.append(b)
+            oof[va] += predict(model, cfg["model"], X.iloc[va], cats) / len(seeds)
+            pred += predict(model, cfg["model"], X_test, cats) / len(splits) / len(seeds)
         folds.append(roc_auc_score(y.iloc[va], oof[va]))
         print(f"  fold {k}: AUC {folds[-1]:.5f}" + (f" (best iter {best[-1]})" if best else ""), flush=True)
     return oof, pred, folds, best

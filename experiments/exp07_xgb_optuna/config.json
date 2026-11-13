@@ -1,0 +1,16 @@
+{
+ "model": "xgb",
+ "early_stopping": 300,
+ "params": {
+  "n_estimators": 10000,
+  "learning_rate": 0.02,
+  "max_depth": 3,
+  "min_child_weight": 1.1187139219529336,
+  "reg_lambda": 0.003916255124529609,
+  "reg_alpha": 0.002437499698711328,
+  "colsample_bytree": 0.5662513990052657,
+  "subsample": 0.8204300442515815,
+  "gamma": 0.917390548521272
+ },
+ "note": "Optuna TPE best of 100 trials on fold 0 at lr 0.05 (D013); fold-0 AUC 0.94615. Report gain on folds 1-4."
+}

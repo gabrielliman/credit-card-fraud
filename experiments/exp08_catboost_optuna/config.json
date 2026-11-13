@@ -1,0 +1,15 @@
+{
+ "model": "catboost",
+ "early_stopping": 300,
+ "params": {
+  "n_estimators": 10000,
+  "learning_rate": 0.02,
+  "depth": 4,
+  "l2_leaf_reg": 4.229023353685266,
+  "random_strength": 0.003920392562691776,
+  "bagging_temperature": 0.9382330446183533,
+  "rsm": 0.6309508514418477,
+  "min_data_in_leaf": 310
+ },
+ "note": "Optuna TPE best of 100 trials on fold 0 at lr 0.05 (D013); fold-0 AUC 0.94542. Report gain on folds 1-4."
+}

@@ -14,5 +14,5 @@ submit:         # make submit EXP=experiments/exp02_lgbm_default
 	conda run -n fraud kaggle competitions submit -c $(COMP) -f $(EXP)/submission.csv -m "$$(basename $(EXP))"
 compare:        # make compare A=... B=... [X=0]  (X = folds to exclude)
 	$(CMP) $(A) $(B) $(if $(X),--exclude-folds $(X))
-tune:           # make tune EXP=experiments/exp06_optuna N=100
-	$(PY) -m src.tune $(EXP) $(N)
+tune:           # make tune EXP=experiments/exp07_xgb M=xgb N=100
+	$(PY) -m src.tune $(EXP) $(M) $(N)
