@@ -23,3 +23,4 @@ CV = stratified 5-fold ROC-AUC (D003). LB = public leaderboard.
 | 09a | 2026-11-13 | exp06 (LightGBM) averaged over 5 seeds | Seed averaging reduces variance | 0.94706 | – | yes | folds 1–4: +0.00023, 4/4, p = 0.036 (significantly better) |
 | 09b | 2026-11-13 | exp07 (XGBoost) averaged over 5 seeds | same | **0.94757** | – | yes (best single) | folds 1–4: +0.00009, 4/4, p = 0.088 (consistent but small) |
 | 09c | 2026-11-13 | exp08 (CatBoost) averaged over 5 seeds | same | 0.94691 | – | yes | folds 1–4: +0.00019, 4/4, p = 0.058 (consistent but small) |
+| 10 | 2026-11-13 | Stack: logistic regression on log-odds of exp01 + 09a + 09b + 09c (D016) | A learned combination beats the best single model | 0.94755 ± 0.0031 | – | tie | vs 09b on folds 1–4: +0.00002, 2/4, p = 0.83 (noise). Weights: LogReg −0.001, LGBM 0.29, XGB 0.41, CatBoost 0.32 |

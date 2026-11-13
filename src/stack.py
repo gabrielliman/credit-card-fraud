@@ -1,13 +1,15 @@
-"""Stacking (D016): logistic regression on rank-transformed OOF predictions.
+"""Stacking (D016): logistic regression on log-odds of OOF predictions.
 
 Usage: conda run -n fraud python -m src.stack experiments/<out_exp> experiments/expA experiments/expB ...
 
 - Inputs: each base experiment's oof.npy / test_pred.npy (same fixed folds, D003).
-- Features: predictions converted to normalized ranks in [0,1] (AUC depends only on ranks; puts
-  models with differently scaled probabilities on the same footing).
+- Features: log-odds (logit) of each model's predicted probability. Raw ranks were tested first and
+  failed: a linear rank scale compresses the top ~2% where fraud lives, giving equal weights and a
+  stack worse than the best single model (D016 diagnostic). Ting & Witten (1999) recommend
+  probabilities as meta-features; logit is the natural scale for a logistic meta-model.
 - The meta-model is evaluated with the SAME 5 folds: fit on 4 folds' OOF, predict the 5th, so the stack's
   OOF score is never computed on rows used to fit its weights (Wolpert, 1992).
-- Final meta-model is fit on all OOF rows and applied to the test ranks.
+- Final meta-model is fit on all OOF rows and applied to the test log-odds.
 - Writes metrics.json / oof.npy / test_pred.npy / submission.csv like src.run, so src.compare works.
 """
 import json, sys
@@ -15,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import rankdata
+from scipy.special import logit
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
@@ -24,8 +26,8 @@ from .config import SEED, N_FOLDS
 from .data import load
 
 
-def ranks(a):
-    return rankdata(a) / len(a)
+def feat(a):
+    return logit(np.clip(a, 1e-6, 1 - 1e-6))
 
 
 def main(out, bases):
@@ -33,8 +35,8 @@ def main(out, bases):
     train, _, sample, _, target = load()
     y = train[target].to_numpy()
     names = [Path(b).name for b in bases]
-    O = np.column_stack([ranks(np.load(Path(b) / "oof.npy")) for b in bases])
-    T = np.column_stack([ranks(np.load(Path(b) / "test_pred.npy")) for b in bases])
+    O = np.column_stack([feat(np.load(Path(b) / "oof.npy")) for b in bases])
+    T = np.column_stack([feat(np.load(Path(b) / "test_pred.npy")) for b in bases])
 
     oof, folds, coefs = np.zeros(len(y)), [], []
     for tr, va in StratifiedKFold(N_FOLDS, shuffle=True, random_state=SEED).split(O, y):

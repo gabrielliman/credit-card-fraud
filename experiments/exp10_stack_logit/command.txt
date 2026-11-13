@@ -1,0 +1,1 @@
+conda run -n fraud python -m src.stack experiments/exp10_stack_logit experiments/exp01_logreg experiments/exp09a_lgbm_seeds experiments/exp09b_xgb_seeds experiments/exp09c_catboost_seeds
