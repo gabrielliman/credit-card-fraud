@@ -1,8 +1,7 @@
 # Kaggle Playground S6E11 — Predicting Credit Card Fraud
 
-https://www.kaggle.com/competitions/playground-series-s6e11 · target `is_fraud` · metric ROC-AUC · deadline 2026-11-30
+https://www.kaggle.com/competitions/playground-series-s6e11 · target `is_fraud` · metric ROC-AUC
 
-The goal is a good score, but mainly a **documented data-science process**: every design choice is recorded with its options, evidence and references.
 
 | Document | What's in it |
 |---|---|
