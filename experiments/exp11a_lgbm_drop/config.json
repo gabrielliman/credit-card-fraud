@@ -1,0 +1,27 @@
+{
+ "model": "lgbm",
+ "early_stopping": 300,
+ "params": {
+  "n_estimators": 10000,
+  "learning_rate": 0.02,
+  "subsample_freq": 1,
+  "num_leaves": 24,
+  "min_child_samples": 543,
+  "reg_lambda": 0.013072151249588368,
+  "reg_alpha": 0.8455062919305788,
+  "colsample_bytree": 0.590732036350408,
+  "subsample": 0.6289012531998661,
+  "min_split_gain": 0.5797834605518679
+ },
+ "note": "exp09a_lgbm_seeds minus the 8 no-signal features (05d retest on final models, D011)",
+ "seeds": [
+  42,
+  1,
+  2,
+  3,
+  4
+ ],
+ "features": [
+  "drop_no_signal"
+ ]
+}

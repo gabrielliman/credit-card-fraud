@@ -117,3 +117,23 @@ Each entry: context → options → decision → rationale/evidence (with refere
 - **Decision:** log-odds of probabilities (option A).
 - **Result (exp10):** CV 0.94755 vs XGBoost 5-seed 0.94757; folds 1–4: +0.00002, p = 0.83. **Stacking doesn't beat the best single model.** The meta-model drops logistic regression (−0.001) and spreads weight across the three GBMs (0.29 / 0.41 / 0.32). Rank correlations of 0.98–0.99 leave nothing for a combination to exploit. This is what ensemble theory predicts: the gain from combining grows with diversity among comparably accurate members (Krogh & Vedelsby, 1995, *Neural Network Ensembles, Cross Validation, and Active Learning*, NeurIPS, the "ambiguity decomposition").
 - **D015 result:** seed averaging improved all three GBMs on 4/4 unseen folds (LightGBM +0.00023, p = 0.036; XGBoost +0.00009, p = 0.088; CatBoost +0.00019, p = 0.058). XGBoost gains least, consistent with its weaker subsampling (subsample 0.82) giving less seed-to-seed variance.
+
+## D017 — Submissions and final selection (2026-11-13)
+- **Submitted:** exp09b (XGBoost 5-seed) and exp10 (stack).
+- **Final selection plan (2 allowed):** exp09b + exp10 (or their exp11/exp12 versions if the feature drop holds). They tie on CV, so we hold the simplest model and the most diversified one, which hedges against the private test set behaving differently.
+
+## D018 — Wrap-up plan (2026-11-13)
+- (b) Retest dropping the 8 no-signal features on the final seed-averaged models (exp11a–c, stack exp12).
+- (c) Presentation materials: score-evolution chart (CV vs LB), Optuna history and importance, diversity heatmap, updated README, and a narrative "story" doc linking the decisions.
+- (a) Neural-net diversity: not pursued.
+
+## D011 revisited — Dropping the 8 no-signal features on the final models (2026-11-13)
+- **Result:** dropping them improved 10 of 12 (model, fold) pairs on the unseen folds 1–4: LightGBM +0.00024 (p = 0.027), XGBoost +0.00009 (p = 0.33), CatBoost +0.00012 (p = 0.34). Stack exp12 0.94769 vs exp10 0.94755, +0.00010, 4/4, p = 0.042.
+- **Interpretation:** consistent with 05d (+0.00014, 4/4). Each tree samples ~50–60% of the columns (colsample/rsm, the most important hyperparameter, D013). With 8 useless columns in the pool, many trees get fewer useful features to choose from, so removing them makes column sampling more efficient. The earlier worry (D011) that other model families would use them through interactions is not supported.
+- **Caveat (selection bias):** the 8 features were chosen from EDA univariate AUCs computed on the *full* training set, i.e. including each validation fold. That is a (mild) form of the selection bias described by Ambroise & McLachlan (2002, *Selection bias in gene extraction on the basis of microarray gene-expression data*, PNAS). The risk is small here: 700k rows, the 8 features have univariate AUC ≤ 0.514, and the decision is "remove noise", not "pick the best few", but it should be stated.
+- **Decision:** adopt the reduced feature set (16 features) for the final models.
+
+## D017 update — Final selection (2026-11-13)
+- **Final 2 selections:** **exp11b** (XGBoost 5 seeds, reduced features: the simplest strong model) + **exp12** (log-odds stack on reduced features: the most diversified). Same reasoning as D017.
+- **Leaderboard check (2026-11-13):** the public LB moved the opposite way from CV. exp11b 0.94747 vs exp09b 0.94776 (−0.0003); exp12 0.94774 vs exp10 0.94794 (−0.0002).
+- **Why we still trust CV:** the public LB scores ~20% of the test set (~60k rows, ~1,000 frauds). The standard error of AUC at that size is ~0.003 (Hanley & McNeil, 1982, *The meaning and use of the area under a ROC curve*, Radiology). Even allowing for the two submissions being highly correlated, a 0.0002–0.0003 difference is well within public-LB noise. The CV evidence uses all 700k rows, paired over folds (exp12 vs exp10: 4/4 folds, p = 0.042). Following D003, decisions stay CV-based; switching on public-LB noise is how teams overfit the public LB and drop on the private one. The selection stays exp11b + exp12.

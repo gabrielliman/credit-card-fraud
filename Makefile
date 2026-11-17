@@ -1,7 +1,7 @@
 COMP := playground-series-s6e11
 PY := conda run --no-capture-output -n fraud python
 CMP := conda run --no-capture-output -n fraud python -m src.compare
-.PHONY: install data eda run submit compare tune
+.PHONY: install data eda run submit compare tune figures
 install:
 	conda run -n fraud pip install -r requirements.txt
 data:
@@ -16,3 +16,5 @@ compare:        # make compare A=... B=... [X=0]  (X = folds to exclude)
 	$(CMP) $(A) $(B) $(if $(X),--exclude-folds $(X))
 tune:           # make tune EXP=experiments/exp07_xgb M=xgb N=100
 	$(PY) -m src.tune $(EXP) $(M) $(N)
+figures:
+	$(PY) -m src.figures

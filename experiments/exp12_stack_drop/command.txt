@@ -1,0 +1,1 @@
+conda run -n fraud python -m src.stack experiments/exp12_stack_drop experiments/exp01_logreg experiments/exp11a_lgbm_drop experiments/exp11b_xgb_drop experiments/exp11c_catboost_drop
